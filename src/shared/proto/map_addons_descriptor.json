@@ -1,0 +1,136 @@
+{
+  "options": {
+    "syntax": "proto3"
+  },
+  "nested": {
+    "bitmap": {
+      "nested": {
+        "addons": {
+          "nested": {
+            "BitmapChunk": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "x": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "size": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "ids": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 5,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "xs": {
+                  "rule": "repeated",
+                  "type": "double",
+                  "id": 6,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "ys": {
+                  "rule": "repeated",
+                  "type": "double",
+                  "id": 7,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "widths": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 8,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "heights": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 9,
+                  "options": {
+                    "packed": true
+                  }
+                }
+              }
+            },
+            "ChunkRef": {
+              "fields": {
+                "x": {
+                  "type": "sint32",
+                  "id": 1
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "records": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "sha256": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "bytes": {
+                  "type": "uint32",
+                  "id": 5
+                }
+              }
+            },
+            "ChunkPage": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "x": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "chunks": {
+                  "rule": "repeated",
+                  "type": "ChunkRef",
+                  "id": 4
+                }
+              }
+            },
+            "ParcelMeans": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "values": {
+                  "rule": "repeated",
+                  "type": "float",
+                  "id": 2,
+                  "options": {
+                    "packed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+// spatial-metrics-v1-protobuf. Snapshot binding is in metrics.json; page bytes
+// contain only immutable neighborhood-local values. Region IDs never renumber.
+message SpatialMetricPage {
+  uint32 version = 1;
+  uint32 region = 2;
+  repeated uint32 count = 3 [packed = true];
+  repeated float diversity = 4 [packed = true];
+  repeated float occupancy = 5 [packed = true];
+  repeated uint32 classes = 6 [packed = true]; // nine counts per bitmap
+}
+
+// Inverted global membership. Local inspection v2 omits occurrence counts.
+// Each bucket owns pattern IDs floor(pattern / 1024). Per-pattern deltas start
+// at the absolute canonical pattern ID and then use positive bitmap-ID deltas.
+message PatternPage {
+  uint32 version = 1;
+  uint32 bucket = 2;
+  repeated uint32 patterns = 3 [packed = true];
+  repeated uint32 offsets = 4 [packed = true];
+  repeated uint32 deltas = 5 [packed = true];
+}

@@ -1,0 +1,332 @@
+{
+  "options": {
+    "syntax": "proto3"
+  },
+  "nested": {
+    "bitmap": {
+      "nested": {
+        "snapshot": {
+          "nested": {
+            "File": {
+              "fields": {
+                "sha256": {
+                  "type": "bytes",
+                  "id": 1
+                },
+                "bytes": {
+                  "type": "uint32",
+                  "id": 2
+                }
+              }
+            },
+            "FrameRef": {
+              "fields": {
+                "bytes": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "sha256": {
+                  "type": "bytes",
+                  "id": 2
+                }
+              }
+            },
+            "Pack": {
+              "fields": {
+                "file": {
+                  "type": "File",
+                  "id": 1
+                },
+                "first": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "last": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "records": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "parcels": {
+                  "type": "uint64",
+                  "id": 5
+                },
+                "frames": {
+                  "rule": "repeated",
+                  "type": "FrameRef",
+                  "id": 6
+                },
+                "headSha256": {
+                  "type": "bytes",
+                  "id": 7
+                },
+                "frameCount": {
+                  "type": "uint32",
+                  "id": 8
+                },
+                "idDeltas": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 9
+                }
+              }
+            },
+            "Region": {
+              "fields": {
+                "id": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "width": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "height": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "geometry": {
+                  "type": "File",
+                  "id": 4
+                },
+                "complete": {
+                  "type": "bool",
+                  "id": 5
+                },
+                "x": {
+                  "type": "double",
+                  "id": 6
+                },
+                "y": {
+                  "type": "double",
+                  "id": 7
+                },
+                "dimensions": {
+                  "type": "File",
+                  "id": 8
+                }
+              }
+            },
+            "Chunk": {
+              "fields": {
+                "x": {
+                  "type": "sint32",
+                  "id": 1
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "records": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "lastHeight": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "recordDigest": {
+                  "type": "bytes",
+                  "id": 5
+                },
+                "packs": {
+                  "rule": "repeated",
+                  "type": "Pack",
+                  "id": 6
+                }
+              }
+            },
+            "Manifest": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "layout": {
+                  "type": "string",
+                  "id": 2
+                },
+                "publishedHeight": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "chunkSize": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "packBytes": {
+                  "type": "uint32",
+                  "id": 6
+                },
+                "regions": {
+                  "rule": "repeated",
+                  "type": "Region",
+                  "id": 7
+                },
+                "chunks": {
+                  "rule": "repeated",
+                  "type": "Chunk",
+                  "id": 8
+                },
+                "snapshot": {
+                  "type": "bytes",
+                  "id": 9
+                },
+                "frameBytes": {
+                  "type": "uint32",
+                  "id": 10
+                },
+                "shuffleSeed": {
+                  "type": "uint32",
+                  "id": 11
+                },
+                "indexPages": {
+                  "rule": "repeated",
+                  "type": "IndexPageRef",
+                  "id": 13
+                },
+                "indexPageSide": {
+                  "type": "uint32",
+                  "id": 14
+                },
+                "storageLayout": {
+                  "type": "string",
+                  "id": 15
+                }
+              },
+              "reserved": [
+                [
+                  3,
+                  3
+                ],
+                [
+                  12,
+                  12
+                ]
+              ]
+            },
+            "PackHeader": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "chunkX": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "chunkY": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "records": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "first": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "last": {
+                  "type": "uint32",
+                  "id": 6
+                }
+              }
+            },
+            "Bitmap": {
+              "fields": {
+                "id": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "txCount": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "encoding": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "tx": {
+                  "type": "bytes",
+                  "id": 4
+                }
+              }
+            },
+            "Frame": {
+              "fields": {
+                "index": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "payload": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "nextSha256": {
+                  "type": "bytes",
+                  "id": 3
+                }
+              }
+            },
+            "IndexPageRef": {
+              "fields": {
+                "x": {
+                  "type": "sint32",
+                  "id": 1
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "file": {
+                  "type": "File",
+                  "id": 3
+                },
+                "records": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "chunks": {
+                  "type": "uint32",
+                  "id": 5
+                }
+              }
+            },
+            "IndexPage": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "x": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "side": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "publishedHeight": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "chunks": {
+                  "rule": "repeated",
+                  "type": "Chunk",
+                  "id": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

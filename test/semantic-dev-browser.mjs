@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createServer} from 'vite';
+import {clientConfig} from '../vite.config.ts';
+import {browserHarness} from './helpers/browser.mjs';
+const port=Number(process.env.MAP_DEV_TEST_PORT||5391),origin=`http://127.0.0.1:${port}`;
+const server=await createServer({...clientConfig(),configFile:false,server:{...clientConfig().server,port,strictPort:true}});
+let browser;
+try{
+    await server.listen();browser=await browserHarness({development:true});const ws=await browser.start(),requests=[];
+    ws.addEventListener('message',event=>{const m=JSON.parse(event.data);if(m.method==='Network.requestWillBeSent'&&m.params.request.url.startsWith(origin+'/map-data/'))requests.push(new URL(m.params.request.url).pathname);});
+    await browser.cdp('Network.enable');await browser.cdp('Page.navigate',{url:origin+'/'});
+    await browser.wait("!!document.getElementById('mapCanvas')");
+    await browser.evaluate(`window.state=()=>{const e=document.getElementById('mapCanvas'),key=Object.keys(e).find(k=>k.startsWith('__reactFiber$'));for(let f=e[key];f;f=f.return)for(let h=f.memoizedState;h;h=h.next){const r=h.memoizedState?.current??h.memoizedState;if(r?.controller)return r.controller;}};`);
+    await browser.wait('state()?.getState().ready&&!state().getState().renderingBusy');
+    assert.equal(await browser.evaluate("!!document.querySelector('script[src*=\"/src/main.tsx\"]')"),true,'Vite serves source without a build');
+    assert.equal(await browser.evaluate("document.querySelector('meta[name=\"bitmap-release\"]')===null"),true,'Development discovers the source release directly');
+    assert.equal(await browser.evaluate('!!state().source.release'),true);
+    await browser.evaluate("state().setRenderingMode('count')");await browser.evaluate('state().setZoom(state().getZoom().stops[3],"drag")');
+    await browser.wait('!state().zoomDamping.active&&state().preview.spatialStats.visibleRegions>0&&state().preview.spatialStats.active===0');
+    await browser.evaluate('state().goToBitmap(563559)');
+    await browser.wait('state().loadedBitmaps.has(563559)&&!state().tween?.isPlaying()');await browser.frame();
+    assert.ok(requests.includes('/map-data/release.json'));
+    assert.ok(requests.some(path=>path.startsWith('/map-data/neighborhoods/dimensions/')));
+    assert.ok(requests.some(path=>path.startsWith('/map-data/metrics/values/')));
+    assert.ok(requests.some(path=>path.startsWith('/map-data/parcels/chunks/')));
+    assert.equal(requests.some(path=>/^\/map-data\/(colors|geometry|dimensions|bitmap-chunks|parcel-index|parcel-previews|previews|lod4)\//.test(path)),false,'No legacy physical namespace is requested');
+    const hashes=await browser.evaluate(`(async()=>{const s=state(),a=await s.source.getAnalyticsIndex(),l=await s.source.getLayerAnalysis();return [l.area.values.sha256,l.parcel.classes.sha256,...['diversity','occupancy'].map(id=>a.metrics[id].values.sha256)];})()`);
+    assert.equal(requests.some(path=>hashes.some(hash=>path.includes(hash+'.pb'))),false,'Navigation outside Patterns loads no other global analytical arrays');
+    assert.equal(browser.errors.length,0,JSON.stringify(browser.errors));
+    await fs.writeFile('/tmp/bitmap-semantic-dev.json',JSON.stringify({origin,requests,state:await browser.evaluate('({ready:state().getState().ready,mode:state().getState().renderingMode,selected:state().getState().selection?.id})'),errors:browser.errors},null,2));
+    await fs.writeFile('/tmp/bitmap-semantic-dev.png',Buffer.from((await browser.cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));
+    console.log(JSON.stringify({status:'passed',sourceDevelopment:true,requests:requests.length,legacyRequests:0,exceptions:browser.errors.length}));
+}finally{if(browser)await browser.close();await server.close();}

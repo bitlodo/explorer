@@ -1,0 +1,38 @@
+syntax = "proto3";
+package bitmap.lod4;
+
+// Standalone addon. Canonical geometry, IDs and the map manifest are unchanged.
+message RegionRef {
+  uint32 id = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  uint32 bitmap_count = 4;
+  string geometry_sha256 = 5;
+  string sha256 = 6;
+  uint32 bytes = 7;
+}
+message Index {
+  uint32 version = 1;
+  string format = 2;
+  string source_snapshot = 3;
+  uint32 grid_side = 4;
+  uint32 bitmap_count = 5;
+  repeated RegionRef regions = 6;
+}
+message Region {
+  uint32 version = 1;
+  uint32 id = 2;
+  uint32 width = 3;
+  uint32 height = 4;
+  uint32 columns = 5;
+  uint32 rows = 6;
+  string geometry_sha256 = 7;
+  // Original bounding areas, in local transaction-height order (at most 2016).
+  repeated uint32 bitmap_areas = 8 [packed = true];
+  // Row-major CSR grid. Empty cells have equal consecutive offsets.
+  repeated uint32 cell_offsets = 9 [packed = true];
+  // Local bitmap IDs, delta-coded separately in each cell, starting from zero.
+  repeated uint32 member_deltas = 10 [packed = true];
+  // Exact intersection areas, paired with member_deltas. No palette or metric.
+  repeated uint32 overlap_areas = 11 [packed = true];
+}

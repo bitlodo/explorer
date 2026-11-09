@@ -1,0 +1,12 @@
+syntax = "proto3";
+package bitmap.preview;
+message TileRef { uint32 level = 1; sint32 x = 2; sint32 y = 3; bytes sha256 = 4; uint32 bytes = 5; }
+message Index {
+  uint32 version = 1; bytes sourceSnapshot = 2; string layout = 3;
+  uint32 tileSize = 4; uint32 resolution = 5; uint32 maxLevel = 6;
+  repeated TileRef tiles = 7; bytes snapshot = 8;
+}
+message Tile {
+  uint32 version = 1; uint32 level = 2; sint32 x = 3; sint32 y = 4;
+  uint32 resolution = 5; bytes deflatedRgba = 6;
+}

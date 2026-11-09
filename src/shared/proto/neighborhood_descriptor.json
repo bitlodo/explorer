@@ -1,0 +1,45 @@
+{
+    "nested": {
+        "Bitmap": {
+            "fields": {
+                "x": {
+                    "type": "int32",
+                    "id": 1
+                },
+                "y": {
+                    "type": "int32",
+                    "id": 2
+                },
+                "width": {
+                    "type": "int32",
+                    "id": 3
+                },
+                "height": {
+                    "type": "int32",
+                    "id": 4
+                }
+            }
+        },
+        "Neighborhood": {
+            "fields": {
+                "neighborhood": {
+                    "type": "int32",
+                    "id": 1
+                },
+                "width": {
+                    "type": "int32",
+                    "id": 2
+                },
+                "height": {
+                    "type": "int32",
+                    "id": 3
+                },
+                "bitmaps": {
+                    "rule": "repeated",
+                    "type": "Bitmap",
+                    "id": 4
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,61 @@
+{
+  "status": "passed",
+  "format": "bitmap-http-protobuf-v9",
+  "snapshot": "c22e9ce4c31f5c5c2502d71669ddee5a4f69e45b2cf994324da6058e83a6010c",
+  "sourceSnapshot": "23b803a95a3e4122f4662d3cd908de19f18e257f520e60f518b547f4d4f07a4b",
+  "txCodec": "tx-huffman-rle-v1-840k-20261029",
+  "sample": false,
+  "neighborhoods": 483,
+  "bitmaps": 973728,
+  "parcels": 1470978849,
+  "packs": 12537,
+  "encodings": {
+    "raw4": 133662,
+    "rle4": 10827,
+    "huffmanRle": 829239
+  },
+  "oldPackBytes": 644481801,
+  "packBytes": 371264073,
+  "packReductionPercent": 42.393396923864415,
+  "oldPayloadBytes": 591874019,
+  "payloadBytes": 318865024,
+  "validation": "Every TX value/order round-tripped through authenticated v9 frames; all IDs retained with fixed cell/neighborhood-band segments; source immutable hashes checked; geometry/dimensions/tiles copied unchanged; root addons rebound to new manifest.",
+  "storageLayout": "typed-protobuf-v2",
+  "storageSourceSnapshot": "9202c8437cd6dd9d4aefbbe3cab88f44b3550a3b09ecfbffc2e8eb3e4035c95f",
+  "storage": {
+    "geometry": {
+      "files": 483,
+      "bytes": 11819793
+    },
+    "dimensions": {
+      "files": 483,
+      "bytes": 2289254
+    },
+    "parcel-index": {
+      "files": 172,
+      "bytes": 2644900
+    },
+    "parcels": {
+      "files": 12537,
+      "bytes": 371264073
+    },
+    "previews": {
+      "files": 80,
+      "bytes": 1103092
+    },
+    "parcel-previews": {
+      "files": 80,
+      "bytes": 997165
+    },
+    "colors": {
+      "files": 1,
+      "bytes": 3894919
+    },
+    "bitmap-chunks": {
+      "files": 2455,
+      "bytes": 20935427
+    }
+  },
+  "storageValidation": "All referenced immutable files checked by SHA-256 and length; geometry, dimensions, parcel packs/pages and tiles copied byte for byte; every bitmap chunk field and Float32 mean compared after Protobuf conversion; JSON roots authenticated without layout/TX regeneration.",
+  "physicalStorage": "bitmap-semantic-dataset-v1"
+}

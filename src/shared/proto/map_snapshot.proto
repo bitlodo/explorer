@@ -1,0 +1,80 @@
+syntax = "proto3";
+package bitmap.snapshot;
+
+// The runtime uses this superset schema for v4-v9 wire messages.
+// Version-specific semantics are validated by shared/protobufChunks.ts.
+
+message File { bytes sha256 = 1; uint32 bytes = 2; }
+message FrameRef { uint32 bytes = 1; bytes sha256 = 2; }
+message Pack {
+  File file = 1;
+  uint32 first = 2;
+  uint32 last = 3;
+  uint32 records = 4;
+  uint64 parcels = 5;
+  repeated FrameRef frames = 6;
+  bytes headSha256 = 7;
+  uint32 frameCount = 8;
+  repeated uint32 idDeltas = 9; // sorted membership: first absolute ID, then positive deltas
+}
+message Region {
+  uint32 id = 1;
+  uint32 width = 2;
+  uint32 height = 3;
+  File geometry = 4; // canonical fallback and hash of the generated layout
+  bool complete = 5;
+  double x = 6;
+  double y = 7;
+  File dimensions = 8; // ordered width,height pairs; no coordinates
+}
+message Chunk {
+  sint32 x = 1;
+  sint32 y = 2;
+  uint32 records = 3;
+  uint32 lastHeight = 4;
+  bytes recordDigest = 5;
+  repeated Pack packs = 6;
+}
+message Manifest {
+  uint32 version = 1;
+  string layout = 2;
+  reserved 3;
+  uint32 publishedHeight = 4;
+  uint32 chunkSize = 5;
+  uint32 packBytes = 6;
+  repeated Region regions = 7;
+  repeated Chunk chunks = 8;
+  bytes snapshot = 9;
+  uint32 frameBytes = 10;
+  uint32 shuffleSeed = 11;
+  reserved 12;
+  repeated IndexPageRef indexPages = 13;
+  uint32 indexPageSide = 14;
+  string storageLayout = 15; // optional physical storage layout, independent of geometry/encoding
+}
+message PackHeader {
+  uint32 version = 1;
+  sint32 chunkX = 2;
+  sint32 chunkY = 3;
+  uint32 records = 4;
+  uint32 first = 5;
+  uint32 last = 6;
+}
+message Bitmap {
+  uint32 id = 1;
+  uint32 txCount = 2;
+  uint32 encoding = 3; // 0=raw4, 1=rle4, 4=tx-huffman-rle-v1-840k-20261029
+  bytes tx = 4;
+}
+message Frame {
+  uint32 index = 1;
+  bytes payload = 2;
+  bytes nextSha256 = 3;
+}
+
+// Spatial pages of chunk/pack metadata. Page version 10 retains v9 pack
+// semantics but publishedHeight is max(local chunk.lastHeight), independent
+// of later global progress. V8/v9 pages retain the original global binding.
+// V9 packs bind the frozen Huffman RLE model; old encodings remain available.
+message IndexPageRef { sint32 x = 1; sint32 y = 2; File file = 3; uint32 records = 4; uint32 chunks = 5; }
+message IndexPage { uint32 version = 1; sint32 x = 2; sint32 y = 3; uint32 side = 4; uint32 publishedHeight = 5; repeated Chunk chunks = 6; }

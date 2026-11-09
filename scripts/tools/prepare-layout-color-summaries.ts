@@ -1,0 +1,25 @@
+import {datasetPath} from '../dataset-path';
+import { readMapManifest } from '../read-map-manifest';
+import {decodeParcelMeans,encodeParcelMeans,validateMeansRef,PARCEL_MEANS_PROTO} from '../../src/shared/parcelMeans';
+import { dataPath } from '../../src/shared/dataStorage.ts';
+// Rebind scalar color summaries only when every canonical neighborhood is unchanged.
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+import {sha256} from '../../src/shared/httpPack.ts';
+const [oldArg,nextArg,outArg,extra]=process.argv.slice(2);assert(oldArg&&nextArg&&outArg&&!extra,'Use OLD_SNAPSHOT NEW_SNAPSHOT NEW_OUT');
+const old=await fs.realpath(oldArg),next=await fs.realpath(nextArg),out=path.resolve(outArg);
+assert(out!==old&&out!==next&&!out.startsWith(old+'/')&&!out.startsWith(next+'/'),'Separate output required');
+const a=(await readMapManifest(old)).manifest,b=(await readMapManifest(next)).manifest;
+assert(a.publishedHeight===b.publishedHeight&&a.regions.length===b.regions.length);
+for(let i=0;i<a.regions.length;i++)for(const field of ['id','width','height'] as const)assert(a.regions[i][field]===b.regions[i][field]);
+for(let i=0;i<a.regions.length;i++)assert.deepEqual({sha256:a.regions[i].geometry.sha256,bytes:a.regions[i].geometry.bytes},{sha256:b.regions[i].geometry.sha256,bytes:b.regions[i].geometry.bytes},'Canonical bitmap geometries must match');
+const root=JSON.parse(await fs.readFile(datasetPath(old,'parcel-colors.json'),'utf8'));
+assert((root.format==='parcel-size-means-v1'||root.format===PARCEL_MEANS_PROTO)&&root.sourceSnapshot===a.snapshot&&root.count===b.publishedHeight+1);
+validateMeansRef(root.means,root.count,root.format);assert(root.preview==='parcel-size-preview.pb');
+const original=await fs.readFile(datasetPath(old,dataPath(a.storageLayout,'colors',root.means.url)));assert(original.length===root.means.bytes&&await sha256(original)===root.means.sha256);
+const values=decodeParcelMeans(original,root.count,root.format),bytes=encodeParcelMeans(values);
+const hash=await sha256(bytes);root.format=PARCEL_MEANS_PROTO;root.means={url:hash+'.pb',sha256:hash,bytes:bytes.length};
+await fs.mkdir(out,{recursive:false});await fs.writeFile(path.join(out,root.means.url),bytes,{flag:'wx'});
+root.sourceSnapshot=b.snapshot;await fs.writeFile(path.join(out,'parcel-colors.json'),JSON.stringify(root)+'\n',{flag:'wx'});
+console.log(JSON.stringify({canonicalGeometries:a.regions.length,meanBytes:bytes.length,sourceSnapshot:a.snapshot,nextSnapshot:b.snapshot}));

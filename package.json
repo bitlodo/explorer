@@ -1,0 +1,54 @@
+{
+  "name": "bitmap-explorer",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "engines": {
+    "bun": ">=1.4.4"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "bun run typecheck && bun scripts/build.ts",
+    "preview": "vite preview",
+    "start": "bun server/index.ts",
+    "db:sync": "bun scripts/sync-aws-transactions.ts",
+    "map:generate": "bun scripts/generate.ts",
+    "db:status": "bun scripts/sync-aws-transactions.ts --status true",
+    "check:site": "bun scripts/check-site.ts",
+    "typecheck": "bun check -p tsconfig.json && bun check -p tsconfig.app.json",
+    "test": "bun test --timeout 60000 ./server ./scripts ./test"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@types/node": "22.20.5",
+    "@types/react": "18.3.12",
+    "@types/react-dom": "18.3.1",
+    "@types/stats.js": "0.17.3",
+    "@types/three": "0.168.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.4.49",
+    "tailwindcss": "3.4.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  },
+  "dependencies": {
+    "@duckdb/node-api": "1.4.5-r.1",
+    "@noble/hashes": "2.4.0",
+    "@radix-ui/react-select": "2.1.2",
+    "@radix-ui/react-slot": "1.1.0",
+    "@timohausmann/quadtree-ts": "2.2.2",
+    "@tweenjs/tween.js": "25.0.0",
+    "class-variance-authority": "0.7.0",
+    "clsx": "2.1.1",
+    "lucide-react": "0.464.0",
+    "protobufjs": "7.4.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "stats.js": "0.17.0",
+    "tailwind-merge": "2.5.5",
+    "tailwindcss-animate": "1.0.7",
+    "three": "0.168.0",
+    "three-spritetext": "1.8.2"
+  }
+}

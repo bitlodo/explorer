@@ -1,0 +1,140 @@
+{
+  "options": {
+    "syntax": "proto3"
+  },
+  "nested": {
+    "bitmap": {
+      "nested": {
+        "lod4": {
+          "nested": {
+            "RegionRef": {
+              "fields": {
+                "id": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "width": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "height": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "bitmapCount": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "geometrySha256": {
+                  "type": "string",
+                  "id": 5
+                },
+                "sha256": {
+                  "type": "string",
+                  "id": 6
+                },
+                "bytes": {
+                  "type": "uint32",
+                  "id": 7
+                }
+              }
+            },
+            "Index": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "format": {
+                  "type": "string",
+                  "id": 2
+                },
+                "sourceSnapshot": {
+                  "type": "string",
+                  "id": 3
+                },
+                "gridSide": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "bitmapCount": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "regions": {
+                  "rule": "repeated",
+                  "type": "RegionRef",
+                  "id": 6
+                }
+              }
+            },
+            "Region": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "id": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "width": {
+                  "type": "uint32",
+                  "id": 3
+                },
+                "height": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "columns": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "rows": {
+                  "type": "uint32",
+                  "id": 6
+                },
+                "geometrySha256": {
+                  "type": "string",
+                  "id": 7
+                },
+                "bitmapAreas": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 8,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "cellOffsets": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 9,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "memberDeltas": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 10,
+                  "options": {
+                    "packed": true
+                  }
+                },
+                "overlapAreas": {
+                  "rule": "repeated",
+                  "type": "uint32",
+                  "id": 11,
+                  "options": {
+                    "packed": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

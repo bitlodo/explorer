@@ -1,0 +1,104 @@
+{
+  "options": {
+    "syntax": "proto3"
+  },
+  "nested": {
+    "bitmap": {
+      "nested": {
+        "preview": {
+          "nested": {
+            "TileRef": {
+              "fields": {
+                "level": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "x": {
+                  "type": "sint32",
+                  "id": 2
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "sha256": {
+                  "type": "bytes",
+                  "id": 4
+                },
+                "bytes": {
+                  "type": "uint32",
+                  "id": 5
+                }
+              }
+            },
+            "Index": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "sourceSnapshot": {
+                  "type": "bytes",
+                  "id": 2
+                },
+                "layout": {
+                  "type": "string",
+                  "id": 3
+                },
+                "tileSize": {
+                  "type": "uint32",
+                  "id": 4
+                },
+                "resolution": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "maxLevel": {
+                  "type": "uint32",
+                  "id": 6
+                },
+                "tiles": {
+                  "rule": "repeated",
+                  "type": "TileRef",
+                  "id": 7
+                },
+                "snapshot": {
+                  "type": "bytes",
+                  "id": 8
+                }
+              }
+            },
+            "Tile": {
+              "fields": {
+                "version": {
+                  "type": "uint32",
+                  "id": 1
+                },
+                "level": {
+                  "type": "uint32",
+                  "id": 2
+                },
+                "x": {
+                  "type": "sint32",
+                  "id": 3
+                },
+                "y": {
+                  "type": "sint32",
+                  "id": 4
+                },
+                "resolution": {
+                  "type": "uint32",
+                  "id": 5
+                },
+                "deflatedRgba": {
+                  "type": "bytes",
+                  "id": 6
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

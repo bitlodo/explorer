@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {createServer} from 'vite';
+import {clientConfig} from '../vite.config.ts';
+import {browserHarness} from './helpers/browser.mjs';
+const port=Number(process.env.MAP_DEV_TEST_PORT||5391),origin=`http://127.0.0.1:${port}`;
+const server=await createServer({...clientConfig(),configFile:false,server:{...clientConfig().server,port,strictPort:true}});
+let browser;
+try{
+    await server.listen();browser=await browserHarness({development:true});await browser.start();
+    const {evaluate,wait,frame,cdp}=browser;
+    await cdp('Emulation.setDeviceMetricsOverride',{width:1600,height:900,deviceScaleFactor:1,mobile:false});
+    await cdp('Page.navigate',{url:origin+'/'});await wait("!!document.getElementById('mapCanvas')");
+    await evaluate(`window.state=()=>{const e=document.getElementById('mapCanvas'),key=Object.keys(e).find(k=>k.startsWith('__reactFiber$'));for(let f=e[key];f;f=f.return)for(let h=f.memoizedState;h;h=h.next){const r=h.memoizedState?.current??h.memoizedState;if(r?.controller)return r.controller;}};`);
+    await wait('state()?.getState().ready&&!state().getState().renderingBusy');
+    await evaluate('state().setZoom(state().getZoom().stops[2],"snap")');await wait('!state().tween?.isPlaying()');
+    await evaluate('state().inspectBitmap(351555)');await frame();
+    const policies=await evaluate(`(()=>{const value=s=>getComputedStyle(document.querySelector(s)).userSelect;return {app:value('.atlas-app'),title:value('.map-context'),button:value('.pin-toggle'),id:value('.selectable-text'),metric:value('.metric-grid dd'),input:value('.atlas-search input')};})()`);
+    assert.deepEqual(policies,{app:'none',title:'none',button:'none',id:'all',metric:'all',input:'text'});
+    const point=await evaluate(`(()=>{const r=state().runtime.renderer.domElement.getBoundingClientRect(),t=state().scene.controls.target;return {x:r.left+r.width*.35,y:r.top+r.height*.45,tx:t.x,tz:t.z};})()`);
+    await evaluate(`(()=>{document.querySelector('.atlas-search input').focus();const selection=window.getSelection(),range=document.createRange();range.selectNodeContents(document.querySelector('.metric-grid dd'));selection.removeAllRanges();selection.addRange(range);})()`);
+    assert.ok(await evaluate('window.getSelection().toString().length>0'),'Reproduce stale selected inspector data');
+    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'left',buttons:1,clickCount:1});
+    assert.equal(await evaluate('window.getSelection().toString()'),'');
+    assert.equal(await evaluate('document.activeElement===state().runtime.renderer.domElement'),true,'Map gestures leave text fields and focus the canvas');
+    for(const step of [.25,.5,.75,1]){
+        await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x+180*step,y:point.y+80*step,buttons:1});await frame();
+        assert.equal(await evaluate('window.getSelection().toString()'),'');
+    }
+    await cdp('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x+180,y:point.y+80,button:'left',buttons:0,clickCount:1});await frame();
+    const drift=await evaluate(`Math.hypot(state().scene.controls.target.x-(${point.tx}),state().scene.controls.target.z-(${point.tz}))`);
+    assert.ok(drift>1,'Preventing browser selection still permits real map panning');
+    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'left',buttons:1,clickCount:1});
+    await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:150,y:250,buttons:1});await frame();
+    await cdp('Input.dispatchMouseEvent',{type:'mouseReleased',x:150,y:250,button:'left',buttons:0,clickCount:1});
+    assert.equal(await evaluate('window.getSelection().toString()'),'','Dragging across sidebar text cannot select it');
+    const metric=await evaluate(`(()=>{const e=document.querySelector('.metric-grid dd'),range=document.createRange();range.selectNodeContents(e);const r=range.getBoundingClientRect();return {x:r.left+.2,end:r.right-.2,y:r.top+r.height/2,value:e.textContent.trim()};})()`);
+    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',x:metric.x,y:metric.y,button:'left',buttons:1,clickCount:1});
+    await cdp('Input.dispatchMouseEvent',{type:'mouseReleased',x:metric.x,y:metric.y,button:'left',buttons:0,clickCount:1});
+    assert.equal(await evaluate('window.getSelection().toString().trim()'),metric.value,'Clicking an inspector value selects it completely for copying');
+    await evaluate(`(()=>{const e=document.querySelector('.atlas-search input');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(e,'313357');e.dispatchEvent(new Event('input',{bubbles:true}));e.focus();})()`);
+    await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65,nativeVirtualKeyCode:65,modifiers:2});await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65,nativeVirtualKeyCode:65,modifiers:2});
+    assert.deepEqual(await evaluate("(()=>{const e=document.querySelector('.atlas-search input');return [e.selectionStart,e.selectionEnd,e.value];})()"),[0,6,'313357'],'Ctrl+A still selects input contents');
+    await cdp('Input.dispatchMouseEvent',{type:'mousePressed',x:point.x,y:point.y,button:'middle',buttons:4,clickCount:1});
+    const height=await evaluate('state().scene.camera.position.y');
+    await cdp('Input.dispatchMouseEvent',{type:'mouseMoved',x:point.x,y:point.y-200,buttons:4});await frame();
+    assert.ok(await evaluate(`Math.abs(state().scene.camera.position.y-${height})>1`),'Middle-drag zoom remains functional');
+    await cdp('Input.dispatchMouseEvent',{type:'mouseReleased',x:point.x,y:point.y-200,button:'middle',buttons:0,clickCount:1});
+    await cdp('Input.dispatchKeyEvent',{type:'keyDown',key:'a',code:'KeyA',windowsVirtualKeyCode:65,nativeVirtualKeyCode:65,modifiers:2});await cdp('Input.dispatchKeyEvent',{type:'keyUp',key:'a',code:'KeyA',windowsVirtualKeyCode:65,nativeVirtualKeyCode:65,modifiers:2});
+    assert.equal(await evaluate('window.getSelection().toString()'),'','Ctrl+A on the map cannot select application text');
+    assert.deepEqual(browser.errors,[]);
+    const report={status:'passed',policies,panDrift:drift,clearStaleSelection:true,dragAcrossUI:true,copyableMetrics:true,inputSelectAll:true,mapSelectAllBlocked:true,middleZoom:true,exceptions:0};
+    await fs.writeFile('/tmp/bitmap-text-selection-browser.json',JSON.stringify(report,null,2));
+    await fs.writeFile('/tmp/bitmap-text-selection-browser.png',Buffer.from((await cdp('Page.captureScreenshot',{format:'png'})).data,'base64'));
+    console.log(JSON.stringify(report));
+}finally{if(browser)await browser.close();await server.close();}

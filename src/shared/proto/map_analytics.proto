@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+// bitmap-analytics-v1-protobuf: independently snapshot-bound analytical addons.
+message AnalyticsValues {
+  uint32 version = 1;
+  repeated float values = 2 [packed = true];
+}
+
+message AnalyticsRegion {
+  uint32 version = 1;
+  uint32 region = 2;
+  repeated uint32 counts = 3 [packed = true];
+  repeated uint32 widths = 4 [packed = true];
+  repeated uint32 heights = 5 [packed = true];
+  repeated float means = 6 [packed = true];
+  repeated float occupancies = 7 [packed = true];
+  repeated float diversities = 8 [packed = true];
+  repeated uint32 patterns = 9 [packed = true];
+  repeated uint32 occurrences = 10 [packed = true];
+  // Nine consecutive counts per bitmap, for side-length classes 1 through 9.
+  repeated uint32 histograms = 11 [packed = true];
+}
+
+// AnalyticsRegion version 2 stores local immutable fields only: occurrences
+// (field 10) is empty. analytics.json declares inspection-local-v2 and binds
+// inverted PatternPage files for exact current-snapshot recurrence/membership.

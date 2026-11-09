@@ -1,0 +1,9 @@
+syntax = "proto3";
+package bitmap.reference;
+
+// Offline restoration metadata. Transactions and dimensions remain in map packs.
+message Reference {
+  uint32 version = 1;
+  string source_snapshot = 2;
+  repeated uint32 patterns = 3 [packed = true];
+}

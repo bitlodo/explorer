@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+// map-layer-analysis-v1-protobuf; snapshot identity is bound by layer-analysis.json.
+message ParcelClasses {
+  uint32 version = 1;
+  uint32 count = 2;
+  // Nine counts per bitmap in height order; class index + 1 is the parcel side.
+  repeated uint32 counts = 3 [packed = true];
+}
+
+// Preview Index/Tile envelopes use heatmap_preview.proto. The parcel preview
+// payload has three adjacent RGBA planes per logical pixel: nine premultiplied
+// class-area weights, canonical bitmap coverage, and two reserved zero bytes.

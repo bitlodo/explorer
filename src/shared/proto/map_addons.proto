@@ -1,0 +1,30 @@
+syntax = "proto3";
+package bitmap.addons;
+message BitmapChunk {
+  uint32 version = 1;
+  sint32 x = 2;
+  sint32 y = 3;
+  uint32 size = 4;
+  repeated uint32 ids = 5 [packed = true];
+  repeated double xs = 6 [packed = true];
+  repeated double ys = 7 [packed = true];
+  repeated uint32 widths = 8 [packed = true];
+  repeated uint32 heights = 9 [packed = true];
+}
+message ChunkRef {
+  sint32 x = 1;
+  sint32 y = 2;
+  uint32 records = 3;
+  bytes sha256 = 4;
+  uint32 bytes = 5;
+}
+message ChunkPage {
+  uint32 version = 1;
+  sint32 x = 2;
+  sint32 y = 3;
+  repeated ChunkRef chunks = 4;
+}
+message ParcelMeans {
+  uint32 version = 1;
+  repeated float values = 2 [packed = true];
+}
