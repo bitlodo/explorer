@@ -23,8 +23,11 @@ function memberships(region: ReturnType<typeof buildLod4Region>, cell: number) {
 }
 
 test('LOD4 descriptor matches the documented Protobuf schema and an independent wire fixture', async () => {
-    const parsed = protobuf.parse(await Bun.file('src/shared/proto/lod4.proto').text()).root.toJSON();
-    expect(parsed).toEqual(descriptor);
+    const source = await Bun.file('src/shared/proto/lod4.proto').text();
+    const { options, ...schema } = descriptor;
+    expect(options).toEqual({ syntax: 'proto3' });
+    expect(source).toMatch(/^syntax\s*=\s*"proto3"\s*;/);
+    expect(protobuf.parse(source).root.resolveAll().toJSON()).toEqual(schema);
     const region = buildLod4Region({ neighborhood: 0, width: 2, height: 1,
         bitmaps: [{ x: 0, y: 0, width: 1, height: 1 }, { x: 1, y: 0, width: 1, height: 1 }] }, geometryHash, 2);
     const wire = Uint8Array.of(8,1,16,0,24,2,32,1,40,2,48,1,58,64,...new TextEncoder().encode(geometryHash),

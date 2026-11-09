@@ -27,7 +27,7 @@
     "@types/three": "0.168.0",
     "@vitejs/plugin-react": "6.1.2",
     "autoprefixer": "10.4.20",
-    "postcss": "8.4.49",
+    "postcss": "8.5.32",
     "tailwindcss": "3.4.15",
     "typescript": "7.0.2",
     "vite": "8.3.5"
@@ -42,7 +42,7 @@
     "class-variance-authority": "0.7.0",
     "clsx": "2.1.1",
     "lucide-react": "0.464.0",
-    "protobufjs": "7.4.0",
+    "protobufjs": "7.6.6",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "stats.js": "0.17.0",

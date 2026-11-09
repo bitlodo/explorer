@@ -10,7 +10,7 @@ const { sha256 } = await loadShared('../../src/shared/httpPack.ts');
 
 test('the packed dimensions schema matches the published v7 bytes', async () => {
     const { files, manifest, data } = await fixture();
-    const root = protobuf.parse(await fs.readFile(new URL('../src/shared/proto/neighborhood_dimensions.proto', import.meta.url), 'utf8')).root;
+    const root = protobuf.parse(await fs.readFile(new URL('../src/shared/proto/neighborhood_dimensions.proto', import.meta.url), 'utf8')).root.resolveAll();
     const bytes = root.lookupType('bitmap.neighborhood.Dimensions').encode({ version: 1, id: 0, width: data.width, height: data.height, sizes: data.bitmaps.flatMap(r => [r.width, r.height]) }).finish();
     assert.deepEqual(new Uint8Array(bytes), files.get(manifest.regions[0].dimensions.url));
 });

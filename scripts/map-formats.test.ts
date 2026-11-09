@@ -32,7 +32,12 @@ test('JSON root is canonical, authenticated and validates all Protobuf semantics
     expect((await decodeMapManifest(codec.encodeManifest(legacy),'manifest.pb')).storageLayout).toBeUndefined();
 });
 test('addon schemas match descriptor; Protobuf chunk/page preserve every Float64 coordinate and identity',async()=>{
-    expect(protobuf.parse(await Bun.file('src/shared/proto/map_addons.proto').text()).root.toJSON()).toEqual(descriptor);
+    const source=await Bun.file('src/shared/proto/map_addons.proto').text();
+    // protobufjs 7.6 omits the legacy root syntax option from its JSON.
+    const {options,...schema}=descriptor;
+    expect(options).toEqual({syntax:'proto3'});
+    expect(source).toMatch(/^syntax\s*=\s*"proto3"\s*;/);
+    expect(protobuf.parse(source).root.resolveAll().toJSON()).toEqual(schema);
     const bitmaps=[{id:0,x:-.5,y:-100.125,width:300,height:400},{id:2016,x:-20.5,y:-10,width:2,height:3}];
     const index:chunks.NeighborhoodChunkIndex={format:chunks.NEIGHBORHOOD_CHUNKS_PROTO,sourceSnapshot:'a'.repeat(64),snapshot:'',size:1024,side:8,maxWidth:300,maxHeight:400,pages:[]};
     const bytes=chunks.encodeNeighborhoodChunkProto(bitmaps,-1,-1,1024),sha=await sha256(bytes),ref={x:-1,y:-1,records:2,url:sha+'.pb',sha256:sha,bytes:bytes.length};

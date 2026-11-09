@@ -11,8 +11,11 @@ const collect=async stream=>{const items=[];for await(const item of stream)items
 async function* split(bytes,cut){yield bytes.slice(0,cut);yield bytes.slice(cut);}
 
 test('the active v9 schema matches its descriptor and preserves v4 streaming across every cut',async()=>{
-    const schema=protobuf.parse(fs.readFileSync(new URL('../src/shared/proto/map_snapshot.proto',import.meta.url),'utf8')).root.toJSON();
-    assert.deepEqual(schema,JSON.parse(fs.readFileSync(new URL('../src/shared/proto/map_snapshot_descriptor.json',import.meta.url))));
+    const source=fs.readFileSync(new URL('../src/shared/proto/map_snapshot.proto',import.meta.url),'utf8');
+    const {options,...descriptor}=JSON.parse(fs.readFileSync(new URL('../src/shared/proto/map_snapshot_descriptor.json',import.meta.url)));
+    assert.deepEqual(options,{syntax:'proto3'});
+    assert.match(source,/^syntax\s*=\s*"proto3"\s*;/);
+    assert.deepEqual(protobuf.parse(source).root.resolveAll().toJSON(),descriptor);
     const input=[encodeSizes(0,[]),encodeSizes(2,[1]),encodeSizes(2016,[15,10,1]),encodeSizes(900000,Array(50).fill(5))];
     const built=await codec.buildPack(input,-1,2,13);assert.equal(built.descriptor.format,PROTO_FORMAT);
     for(let cut=0;cut<=built.wire.length;cut++)assert.deepEqual(await collect(codec.parsePack(split(built.wire,cut),built.descriptor)),input);
@@ -27,7 +30,7 @@ test('v4 rejects corruption, truncation, trailing bytes, count/identity/encoding
     const extra=new Uint8Array(wire.length+1);extra.set(wire);await assert.rejects(()=>collect(codec.parsePack(split(extra,1),descriptor)),/trailing/);
     const bad=wire.slice();bad[bad.length-1]^=1;await assert.rejects(()=>collect(codec.parsePack(split(bad,1),descriptor)),/Corrupt/);
     for(const changed of [{chunkX:1},{records:3},{parcels:8},{first:1}])await assert.rejects(()=>collect(codec.parsePack(split(wire,1),{...descriptor,...changed})));
-    const root=protobuf.parse(fs.readFileSync(new URL('../src/shared/proto/map_snapshot.proto',import.meta.url),'utf8')).root;
+    const root=protobuf.parse(fs.readFileSync(new URL('../src/shared/proto/map_snapshot.proto',import.meta.url),'utf8')).root.resolveAll();
     const Header=root.lookupType('bitmap.snapshot.PackHeader'),Bitmap=root.lookupType('bitmap.snapshot.Bitmap'),Frame=root.lookupType('bitmap.snapshot.Frame');
     const concat=parts=>new Uint8Array(Buffer.concat(parts));
     for(const payload of [
