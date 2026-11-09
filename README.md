@@ -62,8 +62,8 @@ five-stop zoom slider. Keep `public/map-data` complete when downloading the proj
    ```
 
 5. Publish the entire `dist` directory to your static host. For GitHub Pages,
-   commit and push the updated dataset and source, then run the included publish
-   workflow. See [Publish](#publish) for the repository base path and setup.
+   commit and push the updated dataset and source to `main`; the included workflow
+   builds and publishes automatically. See [Publish](#publish) for setup.
 
 - `db:sync` restores a missing or empty database from the included map files,
   then imports newer public AWS transactions. Existing databases keep their progress.
@@ -126,10 +126,13 @@ bun run build --base /REPOSITORY/ --max-bytes 1000000000
 SITE_BASE=/REPOSITORY/ bun run preview
 ```
 
-Use `/` for a custom domain or account-level site. To use the included manual
-**Publish GitHub Pages** workflow, select **GitHub Actions** as the repository's
-Pages source and run the workflow from Actions. It builds and publishes the
-checked-out dataset and checks the size limit; it does not sync AWS data.
+Use `/` for a custom domain or account-level site. Select **GitHub Actions** as
+the repository's Pages source. The included **Publish GitHub Pages** workflow
+runs on every push to `main`, or manually from Actions. It installs dependencies
+from the lockfile, builds with the base path reported by Pages, verifies the site
+and publishes `dist` only after those steps succeed. Deployment is restricted to
+`main`. It checks the size limit and uses the checked-out dataset; it does not
+sync AWS data or regenerate map files.
 Each build creates `dist` from the current application and selected map dataset.
 It does not include cached releases, old builds or unreferenced dataset history.
 Git manages source versions. Additional `.gz` copies are off by default; use
