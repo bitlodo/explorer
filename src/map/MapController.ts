@@ -108,6 +108,9 @@ export default class MapController implements MapControls {
     private viewportSignature = "";
     private directZoomDragging = false;
     private middleZoom?: {pointerId:number;y:number};
+    private readonly touchPointers = new Map<number, {clientX:number;clientY:number}>();
+    private touchPinched = false;
+    private touchNeedsSnap = false;
     private zoomControlSignature = "";
     private readonly chunkDebugEnabled = new URLSearchParams(window.location.search).get('chunks') !== 'off';
     private genesisLabel?: SpriteText;
@@ -238,6 +241,11 @@ export default class MapController implements MapControls {
         this.runtime.scene = this.scene;
         this.scene.controls.addEventListener('change', this.requestUpdate);
         const canvas = this.runtime.renderer.domElement;
+        canvas.addEventListener('pointerdown', this.onTouchStart, true);
+        canvas.addEventListener('pointermove', this.onTouchMove, true);
+        canvas.addEventListener('pointerup', this.onTouchEnd, true);
+        canvas.addEventListener('pointercancel', this.onTouchEnd, true);
+        canvas.addEventListener('lostpointercapture', this.onTouchEnd, true);
         canvas.addEventListener('pointermove', this.onPointerMove);
         canvas.addEventListener('pointerdown',this.onInspectStart);canvas.addEventListener('pointerup',this.onInspectEnd);
         canvas.addEventListener('pointerup', this.requestUpdate);
@@ -743,7 +751,7 @@ export default class MapController implements MapControls {
     }
     private onWheel = (event:WheelEvent)=>{
         event.preventDefault();
-        if(!this.overview||!event.deltaY||this.middleZoom)return;
+        if(!this.overview||!event.deltaY||this.middleZoom||this.touchPointers.size)return;
         this.zoomPointer=this.pointerPosition(event);
         const delta=event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?this.runtime.renderer.domElement.clientHeight:1);
         const now=performance.now(),reference=this.zoomDamping.active?this.zoomDamping.targetHeight:this.scene.camera.position.y;
@@ -801,6 +809,63 @@ export default class MapController implements MapControls {
         if(this.runtime.renderer.domElement.hasPointerCapture(event.pointerId))this.runtime.renderer.domElement.releasePointerCapture(event.pointerId);
     };
     private onMiddleAuxClick=(event:MouseEvent)=>{if(event.button===1){event.preventDefault();}};
+    private touchFrame(){
+        const points=[...this.touchPointers.values()].slice(0,2),a=points[0],b=points[1]??a;
+        return {clientX:(a.clientX+b.clientX)/2,clientY:(a.clientY+b.clientY)/2,distance:Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)};
+    }
+    private onTouchStart=(event:PointerEvent)=>{
+        if(event.pointerType!=='touch'||!this.overview)return;
+        event.preventDefault();event.stopImmediatePropagation();
+        if(!this.touchPointers.size){
+            this.touchNeedsSnap=this.zoomDamping.active||this.directZoomDragging;
+            this.cancelZoom();this.tween?.stop();this.touchPinched=false;
+            this.onInspectStart(event);
+        }else{this.touchPinched=true;this.clickStart=undefined;}
+        this.touchPointers.set(event.pointerId,{clientX:event.clientX,clientY:event.clientY});
+        this.runtime.renderer.domElement.setPointerCapture(event.pointerId);
+    };
+    private onTouchMove=(event:PointerEvent)=>{
+        if(!this.touchPointers.has(event.pointerId))return;
+        event.preventDefault();event.stopImmediatePropagation();
+        const before=this.touchFrame();
+        this.touchPointers.set(event.pointerId,{clientX:event.clientX,clientY:event.clientY});
+        const after=this.touchFrame(),camera=this.scene.camera,controls=this.scene.controls;
+        if(this.clickStart&&Math.hypot(event.clientX-this.clickStart.x,event.clientY-this.clickStart.y)>4)this.clickStart=undefined;
+        camera.updateMatrixWorld();
+        const ground=this.scene.getPointerRaycast(this.pointerPosition(before));
+        const point=this.scene.getPointerRaycast(this.pointerPosition(after));
+        const dx=ground.x-point.x,dz=ground.z-point.z;
+        camera.position.x+=dx;camera.position.z+=dz;
+        controls.target.x+=dx;controls.target.z+=dz;
+        // Constrain finger translation at the current scale before zooming.
+        // The anchored scale change itself must never apply pan limits.
+        if(before.clientX!==after.clientX||before.clientY!==after.clientY)this.scene.constrainPan();
+        controls.update();
+        camera.updateMatrixWorld();
+        this.zoomPointer=this.pointerPosition(after);
+        if(this.touchPointers.size>=2&&before.distance>0&&after.distance>0){
+            // Reuse continuous LOD and the existing midpoint anchor; release
+            // below uses the same five-stop snap policy as the slider.
+            this.directZoomDragging=true;
+            this.setCameraHeight(THREE.MathUtils.clamp(camera.position.y*before.distance/after.distance,this.closestDistance,this.zoomLevels[3]));
+        }
+        this.requestUpdate();
+    };
+    private onTouchEnd=(event:PointerEvent)=>{
+        if(!this.touchPointers.has(event.pointerId))return;
+        event.preventDefault();event.stopImmediatePropagation();
+        if(event.type==='pointerup'&&!this.touchPinched)this.onInspectEnd(event);
+        else this.clickStart=undefined;
+        this.touchPointers.delete(event.pointerId);
+        const canvas=this.runtime.renderer.domElement;
+        if(canvas.hasPointerCapture(event.pointerId))canvas.releasePointerCapture(event.pointerId);
+        if(!this.touchPointers.size){
+            const snap=this.touchPinched||this.touchNeedsSnap;
+            this.touchPinched=false;this.touchNeedsSnap=false;
+            if(snap)this.setZoomFromControl(this.scene.camera.position.y,'release');
+            else this.zoomPointer=undefined;
+        }
+    };
     private updateZoomControl(){
         if(!this.overview)return;
         const canvas=this.runtime.renderer.domElement;
@@ -931,7 +996,7 @@ export default class MapController implements MapControls {
         }
     };
 
-    private pointerPosition(event: PointerEvent | WheelEvent) {
+    private pointerPosition(event: {clientX:number;clientY:number}) {
         const rect = this.runtime.renderer.domElement.getBoundingClientRect();
         return new THREE.Vector2(
             (event.clientX - rect.left) / rect.width * 2 - 1,
@@ -943,7 +1008,7 @@ export default class MapController implements MapControls {
     }
 
     private onPointerMove = (event: PointerEvent) => {
-        if (!this.overview) return;
+        if (!this.overview || event.pointerType==='touch') return;
         const point = this.pointerWorld(event);
         const candidates = this.overview.quadtree.retrieve(new Rectangle({ x: point.x, y: point.z, width: 0.01, height: 0.01 }));
         const hit = candidates.find(rect => point.x >= rect.x && point.x < rect.x + rect.width && point.z >= rect.y && point.z < rect.y + rect.height);
@@ -1120,6 +1185,13 @@ export default class MapController implements MapControls {
         this.workerJobs.clear();
         this.inFlight.clear();
         const canvas = this.runtime.renderer.domElement;
+        canvas.removeEventListener('pointerdown', this.onTouchStart, true);
+        canvas.removeEventListener('pointermove', this.onTouchMove, true);
+        canvas.removeEventListener('pointerup', this.onTouchEnd, true);
+        canvas.removeEventListener('pointercancel', this.onTouchEnd, true);
+        canvas.removeEventListener('lostpointercapture', this.onTouchEnd, true);
+        for(const id of this.touchPointers.keys())if(canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);
+        this.touchPointers.clear();
         canvas.removeEventListener('pointermove', this.onPointerMove);
         canvas.removeEventListener('pointerdown',this.onInspectStart);canvas.removeEventListener('pointerup',this.onInspectEnd);
         canvas.removeEventListener('pointerup', this.requestUpdate);

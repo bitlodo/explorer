@@ -71,3 +71,10 @@
 .map-zoom-range:focus-visible { outline: 2px solid #f5a340; outline-offset: 2px; border-radius: 4px; }
 .map-zoom-drag { position: absolute; inset: 0; cursor: ew-resize; touch-action: none; }
 @media(max-width:960px) { #map-zoom-controls { width: 280px; right: 14px; } }
+@media(max-width:820px),(max-width:1100px) and (max-height:500px) {
+    #map-zoom-controls { top:calc(var(--atlas-header) + 10px);right:max(10px,env(safe-area-inset-right));width:min(320px,calc(100% - 20px));height:66px;gap:4px;padding:6px; }
+    .map-zoom-button { width:44px;height:44px; }
+    .map-zoom-track,.map-zoom-range { height:36px; }
+    .map-zoom-line { top:16px; }.map-zoom-stops { top:18px; }
+    .map-zoom-divider { margin:0 1px; }
+}

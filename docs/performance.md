@@ -85,8 +85,10 @@ Do not infer transaction count from area: `[2]` and `[1,1,1,1]` can occupy the s
 area. Appending to a partial neighborhood can change its dimensions and requires
 an identifiable data revision.
 
-Rendering only on demand, mobile/touch support and device memory instrumentation
-remain future work. The current app blocks mobile user agents in `App.tsx`.
+Mobile layouts and pointer-based touch navigation use the existing bounded
+streaming and continuous LOD. Pinch releases snap to the five zoom stops.
+Rendering only on demand and device memory instrumentation remain future work.
+Emulated touch checks do not establish physical-phone performance.
 
 ## Central stop-3 pan observation
 

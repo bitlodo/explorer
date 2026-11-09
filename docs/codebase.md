@@ -177,7 +177,13 @@ offset and retain continuous filtering.
 The slider, zoom buttons and keyboard preserve the current target, including
 after refresh and over natural spiral gaps. Mouse wheel zoom keeps the ground
 point under the cursor at the same screen position throughout its animation.
-Middle drag anchors to the initial press position. Application chrome does not
+Middle drag anchors to the initial press position. One-finger touch pans the map;
+a two-finger pinch preserves the ground point beneath its moving midpoint.
+Pinch scales continuously and snaps to the nearest of the same five stops on
+release or cancellation. A tap inspects; panning and pinching do not. Touch input
+is captured by the controller before OrbitControls so it cannot rotate or apply
+a second zoom. On narrow screens, analysis opens as a dismissible drawer and the
+inspector opens as a scrollable bottom panel. Application chrome does not
 select text. Inputs, bitmap/pattern IDs, inspector/comparison values, footer
 totals and error details explicitly permit whole-value selection for copying. Canvas pointer-down clears
 text selections, prevents browser selection/drag defaults and focuses the map;

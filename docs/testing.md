@@ -420,3 +420,16 @@ neighbors, color restoration on selection changes/clear, and controller wiring
 through inspection, detail arrival and mode changes. Outputs are
 `/tmp/bitmap-selected-white.{json,png}`. This is functional pixel validation,
 not a performance benchmark.
+
+
+`bun test/mobile-navigation-browser.mjs` runs source Vite and isolated Chrome
+with a mobile user agent and native CDP touch input. It checks continuous pinch
+in both directions, midpoint anchoring through five-stop release snapping,
+one-finger pan, tap inspection, partial release/cancellation and fresh gestures.
+It also verifies scrollable analysis controls, inspector/zoom separation, search
+and full integer footer totals at phone, tablet and short landscape sizes, page
+scale stability, and the absence of a canvas focus border. Screenshots use
+`/tmp/bitmap-mobile-*.png`; the report is
+`/tmp/bitmap-mobile-navigation.json`. These are emulated functional checks,
+not physical-phone, Safari or real-device performance evidence. Set
+`MAP_MOBILE_LAYOUT_ONLY=1` to run only the responsive control checks.

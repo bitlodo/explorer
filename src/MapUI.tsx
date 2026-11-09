@@ -11,6 +11,7 @@ import './analytics.css';
 import {siteBuild,developmentBuild} from './siteBuild';
 import {mapStatus,pendingNeighborhoods,type MapStatus} from './shared/siteMetadata';
 
+const MOBILE_LAYOUT='(max-width: 820px), (max-width: 1100px) and (max-height: 500px)';
 const number=(v:number)=>new Intl.NumberFormat('en-US').format(v);
 const compact=(v:number)=>new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(v);
 const dateLabel=(value:string)=>new Intl.DateTimeFormat('en-US',{dateStyle:'medium',timeStyle:'short',timeZone:'UTC'}).format(new Date(value))+' UTC';
@@ -57,7 +58,8 @@ export default function MapUI({map}:{map:MapControls}){
     const [dataStatus,setDataStatus]=useState<MapStatus>(),[fullscreenError,setFullscreenError]=useState('');
     const [query,setQuery]=useState(''),[searching,setSearching]=useState(false),[searchError,setSearchError]=useState('');
     const [requestedMode,setRequestedMode]=useState<RenderingMode>(DEFAULT_RENDERING_MODE);
-    const [showInspector,setShowInspector]=useState(true),[help,setHelp]=useState(false),[full,setFull]=useState(false);
+    const [showInspector,setShowInspector]=useState(()=>!window.matchMedia(MOBILE_LAYOUT).matches),[help,setHelp]=useState(false),[full,setFull]=useState(false);
+    const [showAnalysis,setShowAnalysis]=useState(false);
     const [pinned,setPinned]=useState<BitmapInspection[]>([]),[comparing,setComparing]=useState(false);
     const removePin=(id:number)=>{
         setPinned(items=>items.filter(item=>item.id!==id));
@@ -75,7 +77,13 @@ export default function MapUI({map}:{map:MapControls}){
     const palette=state.palette;
     const classColors=paletteColors(palette).map(c=>'#'+c.getHexString());
     const choose=(mode:RenderingMode)=>{setRequestedMode(mode);void map.setRenderingMode(mode).catch(()=>{});};
-    useEffect(()=>{if(state.selection)setShowInspector(true);},[state.selection?.id]);
+    useEffect(()=>{if(state.selection){setShowInspector(true);setShowAnalysis(false);}},[state.selection?.id]);
+    useEffect(()=>{
+        const mobile=window.matchMedia(MOBILE_LAYOUT);
+        const resize=()=>{setShowAnalysis(false);if(mobile.matches){setShowInspector(false);setHelp(false);}};
+        mobile.addEventListener('change',resize);
+        return()=>mobile.removeEventListener('change',resize);
+    },[]);
     useEffect(()=>{const listener=()=>setFull(!!document.fullscreenElement);listener();document.addEventListener('fullscreenchange',listener);return()=>document.removeEventListener('fullscreenchange',listener);},[]);
     useEffect(()=>{
         setDataStatus(undefined);if(!state.snapshot)return;
@@ -95,7 +103,7 @@ export default function MapUI({map}:{map:MapControls}){
     const search=async()=>{
         if(!/^\d+$/.test(query.trim())){setSearchError('Enter a block height.');return;}
         const id=Number(query);if(!Number.isSafeInteger(id)||id<0||id>state.publishedHeight){setSearchError(id>state.publishedHeight&&dataStatus?.syncedHeight!==null&&dataStatus?.syncedHeight!==undefined&&id<=dataStatus.syncedHeight?`Block ${number(id)} is synced but not on the map yet. Map coverage ends at ${number(state.publishedHeight)}.`:`Use a height from 0 to ${number(state.publishedHeight)}.`);return;}
-        setSearching(true);setSearchError('');setShowInspector(true);try{await map.goToBitmap(id);}catch(e){setSearchError(String(e));}finally{setSearching(false);}
+        setSearching(true);setSearchError('');setShowAnalysis(false);setShowInspector(true);try{await map.goToBitmap(id);}catch(e){setSearchError(String(e));}finally{setSearching(false);}
     };
     const min=summary?metricAt(state.filter[0],summary):1,max=summary?metricAt(state.filter[1],summary):9;
     const distribution=state.parcelDistribution;
@@ -104,10 +112,12 @@ export default function MapUI({map}:{map:MapControls}){
         <header className="atlas-header">
             <a className="brand" href="#" onClick={e=>{e.preventDefault();map.home();}} aria-label="Bitmap Explorer home"><span className="brand-symbol"><BitmapLogo/></span><span>bitmap<span className="brand-light"> explorer</span><small>BITCOIN / MAINNET</small></span></a>
             <form className="atlas-search" onSubmit={e=>{e.preventDefault();void search();}}><Search size={15}/><input aria-label="Search bitmap by block height" placeholder="Find a bitmap by block height…" inputMode="numeric" value={query} onChange={e=>{setQuery(e.target.value.replace(/\D/g,''));setSearchError('');}}/><button type="submit" disabled={!state.ready||searching} aria-label="Search bitmap">{searching?<Loader2 size={14} className="spin"/>:<span>↵</span>}</button>{searchError&&<div className="search-error" role="alert">{searchError}</div>}</form>
-            <div className="header-actions"><button className="icon-button" aria-label="Toggle bitmap inspector" aria-pressed={showInspector} title={showInspector?'Hide bitmap inspector':'Show bitmap inspector'} onClick={()=>setShowInspector(!showInspector)}>{showInspector?<PanelRightClose size={18}/>:<PanelRightOpen size={18}/>}</button><button className="icon-button" aria-label="Keyboard and navigation help" onClick={()=>setHelp(!help)}><CircleHelp size={17}/></button><button className="icon-button" aria-label={full?'Exit fullscreen':'Enter fullscreen'} title={full?'Exit fullscreen (Esc)':'Enter fullscreen'} aria-pressed={full} onClick={toggleFullscreen}>{full?<Minimize2 size={18}/>:<Maximize2 size={18}/>}</button></div>
+            <div className="header-actions"><button className="icon-button mobile-analysis-toggle" aria-label="Toggle map analysis" aria-expanded={showAnalysis} aria-controls="map-analysis" onClick={()=>{setShowAnalysis(!showAnalysis);setShowInspector(false);setHelp(false);}}><SlidersHorizontal size={18}/></button><button className="icon-button" aria-label="Toggle bitmap inspector" aria-pressed={showInspector} title={showInspector?'Hide bitmap inspector':'Show bitmap inspector'} onClick={()=>{setShowInspector(!showInspector);setShowAnalysis(false);setHelp(false);}}>{showInspector?<PanelRightClose size={18}/>:<PanelRightOpen size={18}/>}</button><button className="icon-button" aria-label="Keyboard and navigation help" onClick={()=>{setHelp(!help);setShowAnalysis(false);if(window.matchMedia(MOBILE_LAYOUT).matches)setShowInspector(false);}}><CircleHelp size={17}/></button><button className="icon-button" aria-label={full?'Exit fullscreen':'Enter fullscreen'} title={full?'Exit fullscreen (Esc)':'Enter fullscreen'} aria-pressed={full} onClick={toggleFullscreen}>{full?<Minimize2 size={18}/>:<Maximize2 size={18}/>}</button></div>
         </header>
         {fullscreenError&&<div className="fullscreen-error panel" role="alert"><span>{fullscreenError}</span><button className="icon-button" aria-label="Dismiss fullscreen error" onClick={()=>setFullscreenError('')}><X size={15}/></button></div>}
-        <aside className={`atlas-sidebar${state.renderingMode==='patterns'?' patterns-sidebar':''}`} aria-label="Map analysis controls">
+        {showAnalysis&&<button className="mobile-panel-backdrop" aria-label="Close map analysis" onClick={()=>setShowAnalysis(false)}/>}
+        <aside id="map-analysis" className={`atlas-sidebar${showAnalysis?' analysis-open':''}${state.renderingMode==='patterns'?' patterns-sidebar':''}`} aria-label="Map analysis controls">
+            <div className="mobile-panel-heading panel-heading"><span>Map analysis</span><button className="icon-button" aria-label="Close analysis panel" onClick={()=>setShowAnalysis(false)}><X size={18}/></button></div>
             {state.publishedHeight>=0&&<details className="data-status"><summary>Map through #{number(state.publishedHeight)}<ChevronDown size={13}/></summary><div className="coverage-details">
                 <p>Only complete regions of 2,016 bitmaps appear on the map.</p>
                 {dataStatus?.syncedHeight!=null&&<p>Synced through <strong>#{number(dataStatus.syncedHeight)}</strong>.</p>}
@@ -150,7 +160,7 @@ export default function MapUI({map}:{map:MapControls}){
         <PinnedBitmaps items={pinned} comparing={comparing} selected={state.selection?.id} onCompare={comparePins} onClose={()=>setComparing(false)} onRemovePin={removePin} onFocus={focusPinned}/>
         {state.ready&&<MapZoomSlider map={map}/>}
         {!state.ready&&<div className="map-loading"><Loader2 className="spin" size={20}/><span>Loading the map…</span><small>{state.status||'Loading authenticated map geometry'}</small></div>}
-        {help&&<div className="help-panel panel"><div className="panel-heading"><span>Navigation</span><button className="icon-button" aria-label="Close help" onClick={()=>setHelp(false)}><X size={14}/></button></div><dl><dt>Drag</dt><dd>Pan the map</dd><dt>Mouse wheel</dt><dd>Zoom at the cursor</dd><dt>Middle drag</dt><dd>Zoom at the starting point</dd><dt>Click bitmap</dt><dd>Inspect its metrics</dd><dt>Home</dt><dd>Return to genesis</dd><dt>Histogram bin</dt><dd>Highlight a range</dd></dl>{state.chunkDebugEnabled&&<details className="debug-settings"><summary>Geometry diagnostics <ChevronDown size={14}/></summary><label className="field-label" htmlFor="map-chunk-debug">Chunk outlines</label><select id="map-chunk-debug" aria-label="Chunk outlines" value={state.chunkDebugMode} onChange={e=>map.setChunkDebug(e.target.value as ChunkDebugMode)}><option value="none">None</option><option value="all">All</option><option value="parcels">Parcel chunks</option><option value="bitmaps">Bitmap chunks</option><option value="heatmap">Heatmap tiles</option></select></details>}</div>}
+        {help&&<div className="help-panel panel"><div className="panel-heading"><span>Navigation</span><button className="icon-button" aria-label="Close help" onClick={()=>setHelp(false)}><X size={14}/></button></div><dl><dt>Drag</dt><dd>Pan the map</dd><dt>Pinch</dt><dd>Zoom · release to snap to a level</dd><dt>One finger</dt><dd>Pan · tap a bitmap to inspect</dd><dt>Mouse wheel</dt><dd>Zoom at the cursor</dd><dt>Middle drag</dt><dd>Zoom at the starting point</dd><dt>Click bitmap</dt><dd>Inspect its metrics</dd><dt>Home</dt><dd>Return to genesis</dd><dt>Histogram bin</dt><dd>Highlight a range</dd></dl>{state.chunkDebugEnabled&&<details className="debug-settings"><summary>Geometry diagnostics <ChevronDown size={14}/></summary><label className="field-label" htmlFor="map-chunk-debug">Chunk outlines</label><select id="map-chunk-debug" aria-label="Chunk outlines" value={state.chunkDebugMode} onChange={e=>map.setChunkDebug(e.target.value as ChunkDebugMode)}><option value="none">None</option><option value="all">All</option><option value="parcels">Parcel chunks</option><option value="bitmaps">Bitmap chunks</option><option value="heatmap">Heatmap tiles</option></select></details>}</div>}
         <footer className="atlas-footer">
             <div className="build-metadata"><span className="build-version">v{siteBuild.version}{developmentBuild?' · dev':''}</span>{siteBuild.builtAt?<time dateTime={siteBuild.builtAt} title="Application build time; map coverage and sync dates are listed in the sidebar.">{dateLabel(siteBuild.builtAt)}</time>:<span>Development build</span>}</div>
             <dl className="footer-totals" aria-label="Dataset totals">
